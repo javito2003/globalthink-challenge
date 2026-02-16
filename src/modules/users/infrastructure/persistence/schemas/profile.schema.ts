@@ -25,7 +25,7 @@ export class Profile {
   bio: string;
 
   @Prop({ required: true })
-  birthdate: Date;
+  birthDate: Date;
 
   createdAt: Date;
   updatedAt: Date;

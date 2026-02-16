@@ -4,8 +4,8 @@ export class CreateProfileDto {
   userId: string;
   firstName: string;
   lastName: string;
+  birthDate: Date;
   bio?: string;
-  birthdate: Date;
 }
 
 export interface IProfileRepository {

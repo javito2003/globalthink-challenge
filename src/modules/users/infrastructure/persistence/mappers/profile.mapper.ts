@@ -8,7 +8,7 @@ export class ProfileMapper {
       firstName: profileDoc.firstName,
       lastName: profileDoc.lastName,
       bio: profileDoc.bio,
-      birthdate: profileDoc.birthdate,
+      birthDate: profileDoc.birthDate,
       createdAt: profileDoc.createdAt,
       updatedAt: profileDoc.updatedAt,
     };

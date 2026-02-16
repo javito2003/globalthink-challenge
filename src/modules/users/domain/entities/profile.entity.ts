@@ -3,7 +3,7 @@ export interface Profile {
   firstName: string;
   lastName: string;
   bio?: string;
-  birthdate: Date;
+  birthDate: Date;
   createdAt: Date;
   updatedAt: Date;
 }

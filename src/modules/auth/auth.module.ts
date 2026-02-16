@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
+import { CustomConfigService } from '../shared/infrastructure/services/custom-config.service';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from './application/use-cases/refresh-token.use-case';
@@ -20,15 +21,16 @@ import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.stra
 
 @Module({
   imports: [
+    ConfigModule,
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+      inject: [CustomConfigService],
+      useFactory: async (configService: CustomConfigService) => ({
+        secret: configService.jwt.accessSecret,
         signOptions: {
-          expiresIn: configService.get<string>('JWT_ACCESS_EXPIRATION', '15m'),
+          expiresIn: '15m',
         },
       }),
     }),
