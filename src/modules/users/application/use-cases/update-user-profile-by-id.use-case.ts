@@ -33,6 +33,8 @@ export class UpdateUserProfileByIdUseCase {
     }
 
     const userProfile = await this.profileRepository.updateById(userId, input);
-    return userProfile;
+    const user = await this.profileRepository.findByUserId(userId);
+
+    return { ...user, profile: userProfile };
   }
 }

@@ -86,12 +86,12 @@ export class UsersController {
   @ApiResponse(EditUserByIdResponse)
   @ApiResponse(UserNotFoundResponse)
   @ApiResponse(UserNotAllowedToEditResponse)
-  updateUser(
+  async updateUser(
     @Param() param: UserIdDto,
     @Body() updateData: UpdateUserProfileDto,
     @UserId() authenticatedUserId: string,
   ) {
-    return this.updateUserProfileByIdUseCase.execute(
+    const result = await this.updateUserProfileByIdUseCase.execute(
       param.userId,
       authenticatedUserId,
       {
@@ -103,6 +103,8 @@ export class UsersController {
         }),
       },
     );
+
+    return new UserResponseDto(result);
   }
 
   @Delete(':userId')
