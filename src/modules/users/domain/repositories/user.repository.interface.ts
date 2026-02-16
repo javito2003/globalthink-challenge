@@ -13,4 +13,6 @@ export interface IUserRepository {
     userId: string,
     refreshToken: string | null,
   ): Promise<void>;
+  findWithCount(): Promise<{ users: User[]; count: number }>;
+  deleteById(userId: string): Promise<void>;
 }

@@ -6,6 +6,10 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable CORS for Swagger UI
+  app.enableCors();
+
   app.useGlobalFilters(new DomainExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
@@ -28,7 +32,6 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
         description: 'Enter JWT access token',
         in: 'header',
       },
@@ -39,7 +42,6 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT-Refresh',
         description: 'Enter JWT refresh token',
         in: 'header',
       },

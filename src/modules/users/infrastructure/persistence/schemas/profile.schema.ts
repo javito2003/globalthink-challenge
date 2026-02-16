@@ -22,7 +22,7 @@ export class Profile {
   lastName: string;
 
   @Prop()
-  bio: string;
+  bio?: string;
 
   @Prop({ required: true })
   birthDate: Date;
