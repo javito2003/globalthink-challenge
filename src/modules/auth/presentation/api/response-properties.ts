@@ -3,7 +3,7 @@ import { ApiResponseOptions } from '@nestjs/swagger';
 import {
   buildErrorDomainResponse,
   buildErrorValidationResponseProperties,
-} from 'src/modules/shared/presentation/build-error-response.properties';
+} from 'src/modules/shared/presentation/api/build-error-response.properties';
 import { TokenPairDto, LogoutResponseDto } from '../dto/auth-response.dto';
 import { AUTH_EXCEPTIONS } from '../../domain/exceptions/auth.exceptions';
 
