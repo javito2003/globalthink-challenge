@@ -9,6 +9,11 @@ export const AUTH_EXCEPTIONS = {
     statusCode: 401,
     code: 'INVALID_REFRESH_TOKEN',
   },
+  INVALID_ACCESS_TOKEN: {
+    message: 'Invalid or expired access token',
+    statusCode: 401,
+    code: 'INVALID_ACCESS_TOKEN',
+  },
   EMAIL_ALREADY_IN_USE: {
     message: 'Email is already in use',
     statusCode: 409,

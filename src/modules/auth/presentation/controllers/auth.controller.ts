@@ -20,8 +20,21 @@ import { JwtAuthGuard } from '../../infrastructure/guards/jwt-auth.guard';
 import { JwtRefreshGuard } from '../../infrastructure/guards/jwt-refresh.guard';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
-import { TokenPairDto, LogoutResponseDto } from '../dto/auth-response.dto';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case';
+import { UserId } from 'src/modules/shared/infrastructure/decorators/user-id.decorator';
+import {
+  LoginSuccessResponse,
+  LoginInvalidCredentialsResponse,
+  LoginInvalidEmailResponse,
+  LoginInvalidPasswordResponse,
+  RefreshSuccessResponse,
+  RefreshInvalidTokenResponse,
+  LogoutSuccessResponse,
+  LogoutUnauthorizedResponse,
+  RegisterSuccessResponse,
+  RegisterValidationErrorResponse,
+  RegisterEmailInUseResponse,
+} from '../api/response-properties';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -40,19 +53,10 @@ export class AuthController {
     description:
       'Authenticate user with email and password, returns access and refresh tokens',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully authenticated',
-    type: TokenPairDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid credentials',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - validation error',
-  })
+  @ApiResponse(LoginSuccessResponse)
+  @ApiResponse(LoginInvalidCredentialsResponse)
+  @ApiResponse(LoginInvalidEmailResponse)
+  @ApiResponse(LoginInvalidPasswordResponse)
   async login(@Body() loginDto: LoginDto) {
     return this.loginUseCase.execute(loginDto.email, loginDto.password);
   }
@@ -66,17 +70,10 @@ export class AuthController {
     description:
       'Get new access and refresh tokens using a valid refresh token',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Tokens refreshed successfully',
-    type: TokenPairDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid or expired refresh token',
-  })
+  @ApiResponse(RefreshSuccessResponse)
+  @ApiResponse(RefreshInvalidTokenResponse)
   async refresh(@Request() req: any) {
-    const { sub, refreshToken } = req.user as {
+    const { sub, refreshToken } = (req as { user: any }).user as {
       sub: string;
       refreshToken: string;
     };
@@ -91,17 +88,10 @@ export class AuthController {
     summary: 'User logout',
     description: 'Invalidate refresh token and logout user',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully logged out',
-    type: LogoutResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
-  async logout(@Request() req: any) {
-    await this.logoutUseCase.execute(req.user.sub as string);
+  @ApiResponse(LogoutSuccessResponse)
+  @ApiResponse(LogoutUnauthorizedResponse)
+  async logout(@UserId() userId: string) {
+    await this.logoutUseCase.execute(userId);
     return { message: 'Logged out successfully' };
   }
 
@@ -111,19 +101,9 @@ export class AuthController {
     summary: 'Register new user',
     description: 'Create a new user account',
   })
-  @ApiResponse({
-    status: 201,
-    description: 'User registered successfully',
-    type: TokenPairDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - validation error',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Email already in use',
-  })
+  @ApiResponse(RegisterSuccessResponse)
+  @ApiResponse(RegisterValidationErrorResponse)
+  @ApiResponse(RegisterEmailInUseResponse)
   register(@Body() registerDto: RegisterDto) {
     return this.registerUseCase.execute({
       birthDate: new Date(registerDto.birthDate),
