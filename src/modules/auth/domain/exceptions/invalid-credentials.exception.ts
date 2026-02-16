@@ -6,6 +6,7 @@ export class InvalidCredentialsException extends DomainException {
     super(
       AUTH_EXCEPTIONS.INVALID_CREDENTIALS.message,
       AUTH_EXCEPTIONS.INVALID_CREDENTIALS.statusCode,
+      AUTH_EXCEPTIONS.INVALID_CREDENTIALS.code,
     );
   }
 }

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './modules/shared/infrastructure/filters/domain-exception.filter';
+import { ValidationExceptionFilter } from './modules/shared/infrastructure/filters/validation-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
@@ -10,7 +11,10 @@ async function bootstrap() {
   // Enable CORS for Swagger UI
   app.enableCors();
 
-  app.useGlobalFilters(new DomainExceptionFilter());
+  app.useGlobalFilters(
+    new DomainExceptionFilter(),
+    new ValidationExceptionFilter(),
+  );
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

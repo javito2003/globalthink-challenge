@@ -1,7 +1,12 @@
 import { DomainException } from 'src/modules/shared/domain/exceptions/domain.exception';
+import { AUTH_EXCEPTIONS } from './auth.exceptions';
 
 export class EmailAlreadyInUseException extends DomainException {
   constructor() {
-    super('Email is already in use', 409);
+    super(
+      AUTH_EXCEPTIONS.EMAIL_ALREADY_IN_USE.message,
+      AUTH_EXCEPTIONS.EMAIL_ALREADY_IN_USE.statusCode,
+      AUTH_EXCEPTIONS.EMAIL_ALREADY_IN_USE.code,
+    );
   }
 }

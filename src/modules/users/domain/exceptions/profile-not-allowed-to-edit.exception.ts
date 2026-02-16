@@ -6,6 +6,7 @@ export class ProfileNotAllowedToEdit extends DomainException {
     super(
       PROFILE_EXCEPTIONS.USER_NOT_ALLOWED_TO_EDIT_PROFILE.message,
       PROFILE_EXCEPTIONS.USER_NOT_ALLOWED_TO_EDIT_PROFILE.statusCode,
+      PROFILE_EXCEPTIONS.USER_NOT_ALLOWED_TO_EDIT_PROFILE.code,
     );
   }
 }

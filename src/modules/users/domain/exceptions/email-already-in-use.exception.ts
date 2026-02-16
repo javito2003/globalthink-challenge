@@ -6,6 +6,7 @@ export class UserNotFound extends DomainException {
     super(
       USER_EXCEPTIONS.USER_NOT_FOUND.message,
       USER_EXCEPTIONS.USER_NOT_FOUND.statusCode,
+      USER_EXCEPTIONS.USER_NOT_FOUND.code,
     );
   }
 }

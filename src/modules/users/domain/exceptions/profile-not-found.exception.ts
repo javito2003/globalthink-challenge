@@ -6,6 +6,7 @@ export class ProfileNotFound extends DomainException {
     super(
       PROFILE_EXCEPTIONS.PROFILE_NOT_FOUND.message,
       PROFILE_EXCEPTIONS.PROFILE_NOT_FOUND.statusCode,
+      PROFILE_EXCEPTIONS.PROFILE_NOT_FOUND.code,
     );
   }
 }

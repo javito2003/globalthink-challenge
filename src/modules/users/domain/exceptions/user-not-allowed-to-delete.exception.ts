@@ -6,6 +6,7 @@ export class UserNotAllowedToDelete extends DomainException {
     super(
       USER_EXCEPTIONS.USER_NOT_ALLOWED_TO_DELETE.message,
       USER_EXCEPTIONS.USER_NOT_ALLOWED_TO_DELETE.statusCode,
+      USER_EXCEPTIONS.USER_NOT_ALLOWED_TO_DELETE.code,
     );
   }
 }

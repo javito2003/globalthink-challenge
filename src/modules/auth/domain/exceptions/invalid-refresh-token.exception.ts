@@ -6,6 +6,7 @@ export class InvalidRefreshTokenException extends DomainException {
     super(
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.message,
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.statusCode,
+      AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.code,
     );
   }
 }
