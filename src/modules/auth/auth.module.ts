@@ -16,6 +16,10 @@ import {
   TOKEN_SERVICE_NAME,
   JwtTokenService,
 } from './infrastructure/services/jwt-token.service';
+import {
+  TOKEN_HASHER_SERVICE_NAME,
+  Sha256TokenHasher,
+} from './infrastructure/services/sha256-token-hasher.service';
 import { JwtAccessStrategy } from './infrastructure/strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
@@ -45,6 +49,10 @@ import { RegisterUseCase } from './application/use-cases/register.use-case';
     {
       provide: TOKEN_SERVICE_NAME,
       useClass: JwtTokenService,
+    },
+    {
+      provide: TOKEN_HASHER_SERVICE_NAME,
+      useClass: Sha256TokenHasher,
     },
     JwtAccessStrategy,
     JwtRefreshStrategy,

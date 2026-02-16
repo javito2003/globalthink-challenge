@@ -43,9 +43,11 @@ describe('Auth - Login (e2e)', () => {
       .send(registerPayload)
       .expect(201);
 
-    // Get user before login to check refreshToken state
+    // Get user before login to check refreshToken state (already has one from register)
     const userBefore = await userRepository.findByEmail(registerPayload.email);
-    expect(userBefore?.refreshToken).toBeNull();
+    const oldRefreshToken = userBefore?.refreshToken;
+    expect(oldRefreshToken).toBeDefined();
+    expect(oldRefreshToken).not.toBeNull();
 
     // Login with registered credentials
     const loginPayload = createLoginPayload({
@@ -68,11 +70,12 @@ describe('Auth - Login (e2e)', () => {
     expect(typeof responseBody.accessToken).toBe('string');
     expect(typeof responseBody.refreshToken).toBe('string');
 
-    // Assert DB - User's refreshToken is updated (hashed)
+    // Assert DB - User's refreshToken is updated (hashed) and different from before
     const userAfter = await userRepository.findByEmail(registerPayload.email);
     expect(userAfter?.refreshToken).toBeDefined();
     expect(userAfter?.refreshToken).not.toBeNull();
     expect(userAfter?.refreshToken).not.toBe(responseBody.refreshToken); // Should be hashed
+    expect(userAfter?.refreshToken).not.toBe(oldRefreshToken); // Should be rotated
   });
 
   it('POST /auth/login - non-existent email', async () => {
@@ -121,9 +124,10 @@ describe('Auth - Login (e2e)', () => {
       AUTH_EXCEPTIONS.INVALID_CREDENTIALS.message,
     );
 
-    // Assert DB - refreshToken NOT updated (should still be null)
+    // Assert DB - refreshToken NOT updated (should still have the one from register)
     const user = await userRepository.findByEmail(registerPayload.email);
-    expect(user?.refreshToken).toBeNull();
+    expect(user?.refreshToken).toBeDefined();
+    expect(user?.refreshToken).not.toBeNull();
   });
 
   it('POST /auth/login - invalid email format', async () => {

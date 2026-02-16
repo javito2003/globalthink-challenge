@@ -4,11 +4,13 @@ import { LoginUseCase } from './login.use-case';
 import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
+import { TOKEN_HASHER_SERVICE_NAME } from '../../infrastructure/services/sha256-token-hasher.service';
 import { InvalidCredentialsException } from '../../domain/exceptions/invalid-credentials.exception';
 import {
   createMockUserRepository,
   createMockPasswordHasher,
   createMockTokenService,
+  createMockTokenHasher,
 } from 'src/modules/shared/test/mocks';
 import {
   createMockUser,
@@ -17,12 +19,14 @@ import {
 import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
 import type { ITokenService } from '../../domain/services/token.service.interface';
+import type { ITokenHasherService } from '../../domain/services/token-hasher.service.interface';
 
 describe('LoginUseCase', () => {
   let useCase: LoginUseCase;
   let userRepository: jest.Mocked<IUserRepository>;
   let passwordHasher: jest.Mocked<IPasswordHasherService>;
   let tokenService: jest.Mocked<ITokenService>;
+  let tokenHasher: jest.Mocked<ITokenHasherService>;
 
   const mockUser = createMockUser();
   const mockTokenPair = createMockTokenPair();
@@ -31,6 +35,7 @@ describe('LoginUseCase', () => {
     userRepository = createMockUserRepository();
     passwordHasher = createMockPasswordHasher();
     tokenService = createMockTokenService();
+    tokenHasher = createMockTokenHasher();
 
     const module = await Test.createTestingModule({
       providers: [
@@ -38,6 +43,7 @@ describe('LoginUseCase', () => {
         { provide: USER_REPOSITORY_TOKEN, useValue: userRepository },
         { provide: BCRYPT_SERVICE_NAME, useValue: passwordHasher },
         { provide: TOKEN_SERVICE_NAME, useValue: tokenService },
+        { provide: TOKEN_HASHER_SERVICE_NAME, useValue: tokenHasher },
       ],
     }).compile();
 
@@ -45,10 +51,12 @@ describe('LoginUseCase', () => {
   });
 
   it('should return token pair when credentials are valid', async () => {
+    const hashedToken = faker.string.alphanumeric(64);
     const hashedRefreshToken = faker.string.alphanumeric(20);
 
     userRepository.findByEmail.mockResolvedValue(mockUser);
     passwordHasher.compare.mockResolvedValue(true);
+    tokenHasher.hash.mockReturnValue(hashedToken);
     passwordHasher.hash.mockResolvedValue(hashedRefreshToken);
     tokenService.generateTokenPair.mockResolvedValue(mockTokenPair);
 
@@ -66,9 +74,8 @@ describe('LoginUseCase', () => {
       sub: mockUser.id,
       email: mockUser.email,
     });
-    expect(passwordHasher.hash).toHaveBeenCalledWith(
-      mockTokenPair.refreshToken,
-    );
+    expect(tokenHasher.hash).toHaveBeenCalledWith(mockTokenPair.refreshToken);
+    expect(passwordHasher.hash).toHaveBeenCalledWith(hashedToken);
     expect(userRepository.updateRefreshToken).toHaveBeenCalledWith(
       mockUser.id,
       hashedRefreshToken,

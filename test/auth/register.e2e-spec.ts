@@ -64,7 +64,9 @@ describe('Auth - Register (e2e)', () => {
     expect(user).toBeDefined();
     expect(user!.email).toBe(payload.email);
     expect(user!.password).not.toBe(payload.password); // Password should be hashed
-    expect(user!.refreshToken).toBeNull(); // refreshToken not stored on register
+    expect(user!.refreshToken).toBeDefined(); // refreshToken should be stored
+    expect(user!.refreshToken).not.toBeNull();
+    expect(user!.refreshToken).not.toBe(responseBody.refreshToken); // Should be hashed
 
     const profile = await profileRepository.findByUserId(user!.id);
     expect(profile).toBeDefined();
@@ -188,5 +190,27 @@ describe('Auth - Register (e2e)', () => {
     // Assert DB - No user created
     const user = await userRepository.findByEmail(payload.email);
     expect(user).toBeNull();
+  });
+
+  it('POST /auth/register - can refresh immediately after registration', async () => {
+    const payload = createRegisterPayload();
+
+    const registerResponse = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send(payload)
+      .expect(201);
+
+    const { refreshToken } = registerResponse.body as ITokenPair;
+
+    // Should be able to refresh immediately after registration
+    const refreshResponse = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Authorization', `Bearer ${refreshToken}`)
+      .expect(200);
+
+    const refreshResponseBody = refreshResponse.body as ITokenPair;
+    expect(refreshResponseBody).toHaveProperty('accessToken');
+    expect(refreshResponseBody).toHaveProperty('refreshToken');
+    expect(refreshResponseBody.refreshToken).not.toBe(refreshToken); // Should get new token
   });
 });

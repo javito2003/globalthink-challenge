@@ -7,12 +7,14 @@ import {
 } from 'src/modules/users/domain/repositories/repository.tokens';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
+import { TOKEN_HASHER_SERVICE_NAME } from '../../infrastructure/services/sha256-token-hasher.service';
 import { EmailAlreadyInUseException } from '../../domain/exceptions/email-already-in-use.exception';
 import {
   createMockUserRepository,
   createMockProfileRepository,
   createMockPasswordHasher,
   createMockTokenService,
+  createMockTokenHasher,
 } from 'src/modules/shared/test/mocks';
 import {
   createMockUser,
@@ -22,6 +24,7 @@ import type { IUserRepository } from 'src/modules/users/domain/repositories/user
 import type { IProfileRepository } from 'src/modules/users/domain/repositories/profile.repository.interface';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
 import type { ITokenService } from '../../domain/services/token.service.interface';
+import type { ITokenHasherService } from '../../domain/services/token-hasher.service.interface';
 
 describe('RegisterUseCase', () => {
   let useCase: RegisterUseCase;
@@ -29,6 +32,7 @@ describe('RegisterUseCase', () => {
   let profileRepository: jest.Mocked<IProfileRepository>;
   let passwordHasher: jest.Mocked<IPasswordHasherService>;
   let tokenService: jest.Mocked<ITokenService>;
+  let tokenHasher: jest.Mocked<ITokenHasherService>;
 
   const registerInput = {
     email: faker.internet.email(),
@@ -46,6 +50,7 @@ describe('RegisterUseCase', () => {
     profileRepository = createMockProfileRepository();
     passwordHasher = createMockPasswordHasher();
     tokenService = createMockTokenService();
+    tokenHasher = createMockTokenHasher();
 
     const module = await Test.createTestingModule({
       providers: [
@@ -54,6 +59,7 @@ describe('RegisterUseCase', () => {
         { provide: PROFILE_REPOSITORY_TOKEN, useValue: profileRepository },
         { provide: BCRYPT_SERVICE_NAME, useValue: passwordHasher },
         { provide: TOKEN_SERVICE_NAME, useValue: tokenService },
+        { provide: TOKEN_HASHER_SERVICE_NAME, useValue: tokenHasher },
       ],
     }).compile();
 
@@ -61,10 +67,16 @@ describe('RegisterUseCase', () => {
   });
 
   it('should create user and profile and return token pair', async () => {
+    const hashedToken = faker.string.alphanumeric(64);
+    const hashedRefreshToken = faker.string.alphanumeric(20);
+
     userRepository.findByEmail.mockResolvedValue(null);
-    passwordHasher.hash.mockResolvedValue('hashed-password');
+    passwordHasher.hash
+      .mockResolvedValueOnce('hashed-password')
+      .mockResolvedValueOnce(hashedRefreshToken);
     userRepository.create.mockResolvedValue(createdUser);
     tokenService.generateTokenPair.mockResolvedValue(mockTokenPair);
+    tokenHasher.hash.mockReturnValue(hashedToken);
 
     const result = await useCase.execute(registerInput);
 
@@ -87,6 +99,12 @@ describe('RegisterUseCase', () => {
       sub: createdUser.id,
       email: registerInput.email,
     });
+    expect(tokenHasher.hash).toHaveBeenCalledWith(mockTokenPair.refreshToken);
+    expect(passwordHasher.hash).toHaveBeenCalledWith(hashedToken);
+    expect(userRepository.updateRefreshToken).toHaveBeenCalledWith(
+      createdUser.id,
+      hashedRefreshToken,
+    );
   });
 
   it('should throw EmailAlreadyInUseException when email exists', async () => {

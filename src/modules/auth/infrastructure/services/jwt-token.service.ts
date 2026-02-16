@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { CustomConfigService } from '../../../shared/infrastructure/services/custom-config.service';
 import {
@@ -22,14 +23,20 @@ export class JwtTokenService implements ITokenService {
 
   async generateTokenPair(payload: ITokenPayload): Promise<ITokenPair> {
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.jwt.accessSecret,
-        expiresIn: ACCESS_TOKEN_EXPIRATION_MINUTES * 60,
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.jwt.refreshSecret,
-        expiresIn: REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60,
-      }),
+      this.jwtService.signAsync(
+        { ...payload, jti: randomUUID() },
+        {
+          secret: this.configService.jwt.accessSecret,
+          expiresIn: ACCESS_TOKEN_EXPIRATION_MINUTES * 60,
+        },
+      ),
+      this.jwtService.signAsync(
+        { ...payload, jti: randomUUID() },
+        {
+          secret: this.configService.jwt.refreshSecret,
+          expiresIn: REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60,
+        },
+      ),
     ]);
 
     return { accessToken, refreshToken };

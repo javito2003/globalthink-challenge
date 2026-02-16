@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
+import { TOKEN_HASHER_SERVICE_NAME } from '../../infrastructure/services/sha256-token-hasher.service';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
 import type {
   ITokenService,
   ITokenPair,
 } from '../../domain/services/token.service.interface';
+import type { ITokenHasherService } from '../../domain/services/token-hasher.service.interface';
 import { InvalidCredentialsException } from '../../domain/exceptions/invalid-credentials.exception';
 import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
 import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
@@ -19,6 +21,8 @@ export class LoginUseCase {
     private readonly passwordHasherService: IPasswordHasherService,
     @Inject(TOKEN_SERVICE_NAME)
     private readonly tokenService: ITokenService,
+    @Inject(TOKEN_HASHER_SERVICE_NAME)
+    private readonly tokenHasherService: ITokenHasherService,
   ) {}
 
   async execute(email: string, password: string): Promise<ITokenPair> {
@@ -44,7 +48,7 @@ export class LoginUseCase {
 
     // Hash and save refresh token
     const hashedRefreshToken = await this.passwordHasherService.hash(
-      tokens.refreshToken,
+      this.tokenHasherService.hash(tokens.refreshToken),
     );
     await this.userRepository.updateRefreshToken(
       existentUser.id,

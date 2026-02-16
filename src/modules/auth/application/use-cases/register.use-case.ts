@@ -2,8 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
+import { TOKEN_HASHER_SERVICE_NAME } from '../../infrastructure/services/sha256-token-hasher.service';
 import type { ITokenService } from '../../domain/services/token.service.inteface';
 import { ITokenPair } from '../../domain/services/token.service.interface';
+import type { ITokenHasherService } from '../../domain/services/token-hasher.service.interface';
 import { EmailAlreadyInUseException } from '../../domain/exceptions/email-already-in-use.exception';
 import {
   PROFILE_REPOSITORY_TOKEN,
@@ -31,6 +33,8 @@ export class RegisterUseCase {
     private readonly passwordHasherService: IPasswordHasherService,
     @Inject(TOKEN_SERVICE_NAME)
     private readonly tokenService: ITokenService,
+    @Inject(TOKEN_HASHER_SERVICE_NAME)
+    private readonly tokenHasherService: ITokenHasherService,
   ) {}
 
   async execute(input: RegisterUseCaseInput): Promise<ITokenPair> {
@@ -55,15 +59,21 @@ export class RegisterUseCase {
       birthDate: input.birthDate,
     });
 
-    const { accessToken, refreshToken } =
-      await this.tokenService.generateTokenPair({
-        sub: createdUser.id,
-        email: createdUser.email,
-      });
+    // Generate token pair
+    const tokens = await this.tokenService.generateTokenPair({
+      sub: createdUser.id,
+      email: createdUser.email,
+    });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    // Hash and save refresh token
+    const hashedRefreshToken = await this.passwordHasherService.hash(
+      this.tokenHasherService.hash(tokens.refreshToken),
+    );
+    await this.userRepository.updateRefreshToken(
+      createdUser.id,
+      hashedRefreshToken,
+    );
+
+    return tokens;
   }
 }

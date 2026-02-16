@@ -3,11 +3,13 @@ import type { IUserRepository } from 'src/modules/users/domain/repositories/user
 import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
+import { TOKEN_HASHER_SERVICE_NAME } from '../../infrastructure/services/sha256-token-hasher.service';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
 import type {
   ITokenService,
   ITokenPair,
 } from '../../domain/services/token.service.interface';
+import type { ITokenHasherService } from '../../domain/services/token-hasher.service.interface';
 import { InvalidRefreshTokenException } from '../../domain/exceptions/invalid-refresh-token.exception';
 
 @Injectable()
@@ -19,6 +21,8 @@ export class RefreshTokenUseCase {
     private readonly passwordHasherService: IPasswordHasherService,
     @Inject(TOKEN_SERVICE_NAME)
     private readonly tokenService: ITokenService,
+    @Inject(TOKEN_HASHER_SERVICE_NAME)
+    private readonly tokenHasherService: ITokenHasherService,
   ) {}
 
   async execute(userId: string, refreshToken: string): Promise<ITokenPair> {
@@ -30,7 +34,7 @@ export class RefreshTokenUseCase {
 
     // Compare the provided refresh token with the stored hashed one
     const isRefreshTokenValid = await this.passwordHasherService.compare(
-      refreshToken,
+      this.tokenHasherService.hash(refreshToken),
       user.refreshToken,
     );
 
@@ -46,7 +50,7 @@ export class RefreshTokenUseCase {
 
     // Hash and update the new refresh token
     const hashedRefreshToken = await this.passwordHasherService.hash(
-      tokens.refreshToken,
+      this.tokenHasherService.hash(tokens.refreshToken),
     );
     await this.userRepository.updateRefreshToken(user.id, hashedRefreshToken);
 
