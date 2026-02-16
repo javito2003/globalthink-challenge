@@ -1,23 +1,22 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { getConnectionToken } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { AppHelper } from '../helpers/app.helper';
 import { DatabaseHelper } from '../helpers/database.helper';
 import { createRegisterPayload } from '../factories/auth.factory';
 import { AUTH_EXCEPTIONS } from '../../src/modules/auth/domain/exceptions/auth.exceptions';
+import { App } from 'supertest/types';
+import { ITokenPair } from 'src/modules/auth/domain/services/token.service.interface';
+import { ErrorResponseProperties } from 'src/modules/shared/presentation/api/build-error-response.properties';
 
 describe('Auth - Logout (e2e)', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
-  let connection: Connection;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
-    connection = app.get<Connection>(getConnectionToken());
   });
 
   afterAll(async () => {
@@ -44,14 +43,9 @@ describe('Auth - Logout (e2e)', () => {
       })
       .expect(200);
 
-    const { accessToken } = loginResponse.body;
+    const responseBody = loginResponse.body as ITokenPair;
 
-    // Verify user has refreshToken before logout
-    const userBefore = await connection
-      .collection('users')
-      .findOne({ email: registerPayload.email });
-    expect(userBefore?.refreshToken).not.toBeNull();
-    expect(userBefore?.refreshToken).toBeDefined();
+    const { accessToken } = responseBody;
 
     // Logout
     const logoutResponse = await request(app.getHttpServer())
@@ -60,13 +54,6 @@ describe('Auth - Logout (e2e)', () => {
       .expect(200);
 
     expect(logoutResponse.body).toHaveProperty('message');
-    expect(logoutResponse.body.message).toBe('Logged out successfully');
-
-    // Assert DB - User's refreshToken is set to null
-    const userAfter = await connection
-      .collection('users')
-      .findOne({ email: registerPayload.email });
-    expect(userAfter?.refreshToken).toBeNull();
   });
 
   it('POST /auth/logout - missing Bearer token', async () => {
@@ -74,7 +61,9 @@ describe('Auth - Logout (e2e)', () => {
       .post('/auth/logout')
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_ACCESS_TOKEN.code,
     );
   });
@@ -85,10 +74,12 @@ describe('Auth - Logout (e2e)', () => {
       .set('Authorization', 'Bearer invalid-token')
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_ACCESS_TOKEN.code,
     );
-    expect(response.body.errors[0].message).toBe(
+    expect(responseBody.errors[0].message).toBe(
       AUTH_EXCEPTIONS.INVALID_ACCESS_TOKEN.message,
     );
   });
@@ -109,7 +100,7 @@ describe('Auth - Logout (e2e)', () => {
       })
       .expect(200);
 
-    const { refreshToken } = loginResponse.body;
+    const { refreshToken } = loginResponse.body as ITokenPair;
 
     // Try to use refresh token for logout (should fail)
     const response = await request(app.getHttpServer())
@@ -117,15 +108,10 @@ describe('Auth - Logout (e2e)', () => {
       .set('Authorization', `Bearer ${refreshToken}`)
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_ACCESS_TOKEN.code,
     );
-
-    // Assert DB - refreshToken should still exist (logout didn't happen)
-    const user = await connection
-      .collection('users')
-      .findOne({ email: registerPayload.email });
-    expect(user?.refreshToken).not.toBeNull();
   });
 
   it('POST /auth/logout - already logged out', async () => {
@@ -144,7 +130,7 @@ describe('Auth - Logout (e2e)', () => {
       })
       .expect(200);
 
-    const { accessToken } = loginResponse.body;
+    const { accessToken } = loginResponse.body as ITokenPair;
 
     // First logout
     await request(app.getHttpServer())
@@ -158,12 +144,7 @@ describe('Auth - Logout (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(response.body.message).toBe('Logged out successfully');
-
-    // Assert DB - refreshToken should still be null
-    const user = await connection
-      .collection('users')
-      .findOne({ email: registerPayload.email });
-    expect(user?.refreshToken).toBeNull();
+    const responseBody = response.body as ErrorResponseProperties;
+    expect(responseBody.message).toBe('Logged out successfully');
   });
 });

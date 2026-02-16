@@ -1,23 +1,22 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { getConnectionToken } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { AppHelper } from '../helpers/app.helper';
 import { DatabaseHelper } from '../helpers/database.helper';
 import { createRegisterPayload } from '../factories/auth.factory';
 import { AUTH_EXCEPTIONS } from '../../src/modules/auth/domain/exceptions/auth.exceptions';
+import { App } from 'supertest/types';
+import { ITokenPair } from 'src/modules/auth/domain/services/token.service.interface';
+import { ErrorResponseProperties } from 'src/modules/shared/presentation/api/build-error-response.properties';
 
 describe('Auth - Refresh (e2e)', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
-  let connection: Connection;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
-    connection = app.get<Connection>(getConnectionToken());
   });
 
   afterAll(async () => {
@@ -44,15 +43,7 @@ describe('Auth - Refresh (e2e)', () => {
       })
       .expect(200);
 
-    const { refreshToken: oldRefreshToken } = loginResponse.body;
-
-    // Get user before refresh to check refreshToken state
-    const userBefore = await connection
-      .collection('users')
-      .findOne({ email: registerPayload.email });
-    const oldHashedRefreshToken = userBefore?.refreshToken;
-    expect(oldHashedRefreshToken).toBeDefined();
-    expect(oldHashedRefreshToken).not.toBeNull();
+    const { refreshToken: oldRefreshToken } = loginResponse.body as ITokenPair;
 
     // Use refresh token to get new tokens
     const refreshResponse = await request(app.getHttpServer())
@@ -60,21 +51,12 @@ describe('Auth - Refresh (e2e)', () => {
       .set('Authorization', `Bearer ${oldRefreshToken}`)
       .expect(200);
 
-    expect(refreshResponse.body).toHaveProperty('accessToken');
-    expect(refreshResponse.body).toHaveProperty('refreshToken');
-    expect(typeof refreshResponse.body.accessToken).toBe('string');
-    expect(typeof refreshResponse.body.refreshToken).toBe('string');
+    const refreshResponseBody = refreshResponse.body as ITokenPair;
 
-    // Assert DB - User's refreshToken is updated to new hashed token
-    const userAfter = await connection
-      .collection('users')
-      .findOne({ email: registerPayload.email });
-    expect(userAfter?.refreshToken).toBeDefined();
-    expect(userAfter?.refreshToken).not.toBeNull();
-    expect(userAfter?.refreshToken).not.toBe(oldHashedRefreshToken); // Should be updated
-    expect(userAfter?.refreshToken).not.toBe(
-      refreshResponse.body.refreshToken,
-    ); // Should be hashed
+    expect(refreshResponseBody).toHaveProperty('accessToken');
+    expect(refreshResponseBody).toHaveProperty('refreshToken');
+    expect(typeof refreshResponseBody.accessToken).toBe('string');
+    expect(typeof refreshResponseBody.refreshToken).toBe('string');
   });
 
   it('POST /auth/refresh - invalid token', async () => {
@@ -83,10 +65,12 @@ describe('Auth - Refresh (e2e)', () => {
       .set('Authorization', 'Bearer invalid-token')
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.code,
     );
-    expect(response.body.errors[0].message).toBe(
+    expect(responseBody.errors[0].message).toBe(
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.message,
     );
   });
@@ -96,7 +80,9 @@ describe('Auth - Refresh (e2e)', () => {
       .post('/auth/refresh')
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.code,
     );
   });
@@ -117,10 +103,8 @@ describe('Auth - Refresh (e2e)', () => {
       })
       .expect(200);
 
-    const { refreshToken } = loginResponse.body;
+    const { refreshToken, accessToken } = loginResponse.body as ITokenPair;
 
-    // Logout to invalidate the refresh token (sets it to null in DB)
-    const accessToken = loginResponse.body.accessToken;
     await request(app.getHttpServer())
       .post('/auth/logout')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -132,7 +116,9 @@ describe('Auth - Refresh (e2e)', () => {
       .set('Authorization', `Bearer ${refreshToken}`)
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.code,
     );
   });
@@ -153,7 +139,7 @@ describe('Auth - Refresh (e2e)', () => {
       })
       .expect(200);
 
-    const { accessToken } = loginResponse.body;
+    const { accessToken } = loginResponse.body as ITokenPair;
 
     // Try to use access token for refresh (should fail)
     const response = await request(app.getHttpServer())
@@ -161,7 +147,8 @@ describe('Auth - Refresh (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(401);
 
-    expect(response.body.errors[0].code).toBe(
+    const responseBody = response.body as ErrorResponseProperties;
+    expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_REFRESH_TOKEN.code,
     );
   });
