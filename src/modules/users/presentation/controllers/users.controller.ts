@@ -23,7 +23,8 @@ import { UserIdDto } from '../dtos/data/user-id.dto';
 import { FindUsersUseCase } from '../../application/use-cases/find-users.use-case';
 import { UserResponseDto } from '../dtos/user-response.dto';
 import {
-  UserNotAllowedResponse,
+  UserNotAllowedToDeleteResponse,
+  UserNotAllowedToEditResponse,
   UserNotFoundResponse,
 } from '../api/response-properties';
 import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
@@ -93,7 +94,7 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse(UserNotFoundResponse)
-  @ApiResponse(UserNotAllowedResponse)
+  @ApiResponse(UserNotAllowedToEditResponse)
   updateUser(
     @Param() param: UserIdDto,
     @Body() updateData: UpdateUserProfileDto,
@@ -125,6 +126,7 @@ export class UsersController {
     description: 'User deleted successfully',
   })
   @ApiResponse(UserNotFoundResponse)
+  @ApiResponse(UserNotAllowedToDeleteResponse)
   async deleteUser(
     @Param() param: UserIdDto,
     @UserId() authenticatedUserId: string,
