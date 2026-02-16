@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:8
+    container_name: globalthink_challenge_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+    volumes:
+      - mongodb_data:/var/lib/mongodb
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--username",
+          "${MONGO_ROOT_USERNAME:-admin}",
+          "--password",
+          "${MONGO_ROOT_PASSWORD:-password}",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - globalthink_challenge_network
+
+  backend:
+    build: .
+    container_name: globalthink_challenge_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      MONGO_URI: "mongodb://mongodb:27017/globalthink_challenge"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-your-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-secret}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - globalthink_challenge_network
+
+volumes:
+  mongodb_data:
+    name: globalthink_challenge_mongodb_data
+
+networks:
+  globalthink_challenge_network:
+    name: globalthink_challenge_network
+    driver: bridge
