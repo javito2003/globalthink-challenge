@@ -9,6 +9,7 @@ import {
   ProfileSchema,
 } from './infrastructure/persistence/schemas/profile.schema';
 import { UserRepository } from './infrastructure/persistence/repositories/user.repository';
+import { ProfileRepository } from './infrastructure/persistence/repositories/profie.repository';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { UserRepository } from './infrastructure/persistence/repositories/user.r
       },
     ]),
   ],
-  providers: [UserRepository],
-  exports: [UserRepository],
+  providers: [UserRepository, ProfileRepository],
+  exports: [UserRepository, ProfileRepository],
 })
 export class UsersModule {}
