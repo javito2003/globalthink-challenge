@@ -18,6 +18,7 @@ import { FindUserByIdUseCase } from './application/use-cases/find-user-by-id.use
 import { UpdateUserProfileByIdUseCase } from './application/use-cases/update-user-profile-by-id.use-case';
 import { FindUsersUseCase } from './application/use-cases/find-users.use-case';
 import { UsersController } from './presentation/controllers/users.controller';
+import { DeleteUserByIdUseCase } from './application/use-cases/delete-user-by-id.use-case';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { UsersController } from './presentation/controllers/users.controller';
     FindUserByIdUseCase,
     UpdateUserProfileByIdUseCase,
     FindUsersUseCase,
+    DeleteUserByIdUseCase,
   ],
   exports: [USER_REPOSITORY_TOKEN, PROFILE_REPOSITORY_TOKEN],
 })

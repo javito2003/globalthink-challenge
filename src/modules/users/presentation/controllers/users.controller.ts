@@ -17,6 +17,7 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiBody,
+  ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/modules/auth/infrastructure/guards/jwt-auth.guard';
 import { FindUserByIdUseCase } from '../../application/use-cases/find-user-by-id.use-case';
@@ -30,6 +31,8 @@ import {
 } from '../api/response-properties';
 import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
 import { UserId } from 'src/modules/shared/infrastructure/decorators/user-id.decorator';
+import { UserIdProperty } from '../api/request-properties';
+import { DeleteUserByIdUseCase } from '../../application/use-cases/delete-user-by-id.use-case';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')
@@ -45,6 +48,7 @@ export class UsersController {
     private readonly findUserByIdUseCase: FindUserByIdUseCase,
     private readonly findUsersUseCase: FindUsersUseCase,
     private readonly updateUserProfileByIdUseCase: UpdateUserProfileByIdUseCase,
+    private readonly deleteUserByIdUseCase: DeleteUserByIdUseCase,
   ) {}
 
   @Get('')
@@ -63,12 +67,13 @@ export class UsersController {
     return { users: users.map((user) => new UserResponseDto(user)), count };
   }
 
-  @Get(':id')
+  @Get(':userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get user by ID',
     description: 'Retrieve a specific user by their ID',
   })
+  @ApiParam(UserIdProperty)
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User found successfully',
@@ -81,12 +86,13 @@ export class UsersController {
     return new UserResponseDto(userFound);
   }
 
-  @Put(':id')
+  @Put(':userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update user',
     description: 'Update user information and profile',
   })
+  @ApiParam(UserIdProperty)
   @ApiBody({ type: UpdateUserProfileDto })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -114,18 +120,22 @@ export class UsersController {
     );
   }
 
-  @Delete(':id')
+  @Delete(':userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete user',
     description: 'Delete a user account',
   })
+  @ApiParam(UserIdProperty)
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User deleted successfully',
   })
   @ApiResponse(UserNotFoundResponse)
-  deleteUser() {
-    return 'Delete user';
+  async deleteUser(
+    @Param() param: UserIdDto,
+    @UserId() authenticatedUserId: string,
+  ) {
+    await this.deleteUserByIdUseCase.execute(param.userId, authenticatedUserId);
   }
 }
