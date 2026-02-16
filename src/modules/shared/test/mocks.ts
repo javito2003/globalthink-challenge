@@ -6,6 +6,7 @@ import type { ITokenService } from 'src/modules/auth/domain/services/token.servi
 export const createMockUserRepository = (): jest.Mocked<IUserRepository> => ({
   findByEmail: jest.fn(),
   findById: jest.fn(),
+  findByIds: jest.fn(),
   create: jest.fn(),
   updateRefreshToken: jest.fn(),
   findWithCount: jest.fn(),
@@ -18,6 +19,7 @@ export const createMockProfileRepository =
     updateById: jest.fn(),
     findByUserId: jest.fn(),
     findByUserIds: jest.fn(),
+    findWithCount: jest.fn(),
     deleteByUserId: jest.fn(),
   });
 

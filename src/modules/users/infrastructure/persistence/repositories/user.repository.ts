@@ -30,6 +30,11 @@ export class UserRepository implements IUserRepository {
     return user ? UserMapper.toEntity(user) : null;
   }
 
+  async findByIds(userIds: string[]): Promise<UserEntity[]> {
+    const users = await this.userModel.find({ _id: { $in: userIds } }).exec();
+    return users.map((user) => UserMapper.toEntity(user));
+  }
+
   async updateRefreshToken(
     userId: string,
     refreshToken: string | null,

@@ -1,18 +1,32 @@
 import { Test } from '@nestjs/testing';
 import { faker } from '@faker-js/faker';
 import { UpdateUserProfileByIdUseCase } from './update-user-profile-by-id.use-case';
-import { PROFILE_REPOSITORY_TOKEN } from '../../domain/repositories/repository.tokens';
+import {
+  PROFILE_REPOSITORY_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from '../../domain/repositories/repository.tokens';
 import { UserNotFound } from '../../domain/exceptions/email-already-in-use.exception';
 import { UserNotAllowedToEdit } from '../../domain/exceptions/user-not-allowed-to-edit.exception';
-import { createMockProfileRepository } from 'src/modules/shared/test/mocks';
-import { createMockProfile } from 'src/modules/shared/test/factories';
+import {
+  createMockProfileRepository,
+  createMockUserRepository,
+} from 'src/modules/shared/test/mocks';
+import {
+  createMockProfile,
+  createMockUser,
+} from 'src/modules/shared/test/factories';
 import type { IProfileRepository } from '../../domain/repositories/profile.repository.interface';
+import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 
 describe('UpdateUserProfileByIdUseCase', () => {
   let useCase: UpdateUserProfileByIdUseCase;
   let profileRepository: jest.Mocked<IProfileRepository>;
+  let userRepository: jest.Mocked<IUserRepository>;
 
-  const mockProfile = createMockProfile();
+  const user = createMockUser();
+  const mockProfile = createMockProfile({
+    userId: user.id,
+  });
 
   const updatedProfile = {
     ...mockProfile,
@@ -22,11 +36,16 @@ describe('UpdateUserProfileByIdUseCase', () => {
 
   beforeEach(async () => {
     profileRepository = createMockProfileRepository();
+    userRepository = createMockUserRepository();
 
     const module = await Test.createTestingModule({
       providers: [
         UpdateUserProfileByIdUseCase,
         { provide: PROFILE_REPOSITORY_TOKEN, useValue: profileRepository },
+        {
+          provide: USER_REPOSITORY_TOKEN,
+          useValue: userRepository,
+        },
       ],
     }).compile();
 
@@ -36,6 +55,7 @@ describe('UpdateUserProfileByIdUseCase', () => {
   it('should update profile when user is the owner', async () => {
     profileRepository.findByUserId.mockResolvedValue(mockProfile);
     profileRepository.updateById.mockResolvedValue(updatedProfile);
+    userRepository.findById.mockResolvedValue(user);
 
     const input = {
       firstName: updatedProfile.firstName,
@@ -47,7 +67,10 @@ describe('UpdateUserProfileByIdUseCase', () => {
       input,
     );
 
-    expect(result).toEqual(updatedProfile);
+    expect(result).toEqual({
+      ...user,
+      profile: updatedProfile,
+    });
     expect(profileRepository.findByUserId).toHaveBeenCalledWith(
       mockProfile.userId,
     );
@@ -55,6 +78,7 @@ describe('UpdateUserProfileByIdUseCase', () => {
       mockProfile.userId,
       input,
     );
+    expect(userRepository.findById).toHaveBeenCalledWith(mockProfile.userId);
   });
 
   it('should throw UserNotFound when profile does not exist', async () => {

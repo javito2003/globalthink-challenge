@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PROFILE_REPOSITORY_TOKEN } from '../../domain/repositories/repository.tokens';
+import {
+  PROFILE_REPOSITORY_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from '../../domain/repositories/repository.tokens';
 import type { IProfileRepository } from '../../domain/repositories/profile.repository.interface';
 import { UserNotAllowedToEdit } from '../../domain/exceptions/user-not-allowed-to-edit.exception';
 import { UserNotFound } from '../../domain/exceptions/email-already-in-use.exception';
+import type { IUserRepository } from '../../domain/repositories/user.repository.interface';
 
 export interface UpdateUserByIdUseCaseInput {
   firstName?: string;
@@ -16,6 +20,8 @@ export class UpdateUserProfileByIdUseCase {
   constructor(
     @Inject(PROFILE_REPOSITORY_TOKEN)
     private readonly profileRepository: IProfileRepository,
+    @Inject(USER_REPOSITORY_TOKEN)
+    private readonly userRepository: IUserRepository,
   ) {}
 
   async execute(
@@ -33,7 +39,7 @@ export class UpdateUserProfileByIdUseCase {
     }
 
     const userProfile = await this.profileRepository.updateById(userId, input);
-    const user = await this.profileRepository.findByUserId(userId);
+    const user = await this.userRepository.findById(userId);
 
     return { ...user, profile: userProfile };
   }

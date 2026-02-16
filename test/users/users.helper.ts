@@ -5,12 +5,16 @@ import { ITokenPair } from 'src/modules/auth/domain/services/token.service.inter
 import { App } from 'supertest/types';
 import { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
 import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
+import { RegisterDto } from 'src/modules/auth/presentation/dto/register.dto';
 
 export class UsersHelper {
-  static async setupUser(app: INestApplication<App>) {
+  static async setupUser(
+    app: INestApplication<App>,
+    overrides?: Partial<RegisterDto>,
+  ) {
     const userRepository = app.get<IUserRepository>(USER_REPOSITORY_TOKEN);
 
-    const payload = createRegisterPayload();
+    const payload = createRegisterPayload(overrides);
     const response = await request(app.getHttpServer())
       .post('/auth/register')
       .send(payload)

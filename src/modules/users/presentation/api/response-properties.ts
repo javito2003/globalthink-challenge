@@ -7,8 +7,25 @@ import { UserResponseDto } from '../dtos/user-response.dto';
 // Get Users
 export const GetUsersResponse: ApiResponseOptions = {
   status: HttpStatus.OK,
-  description: 'List of users retrieved successfully',
-  type: [UserResponseDto],
+  description: 'List of users retrieved successfully with pagination',
+  schema: {
+    type: 'object',
+    properties: {
+      data: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/UserResponseDto' },
+      },
+      meta: {
+        type: 'object',
+        properties: {
+          total: { type: 'number', example: 100 },
+          page: { type: 'number', example: 1 },
+          limit: { type: 'number', example: 10 },
+          totalPages: { type: 'number', example: 10 },
+        },
+      },
+    },
+  },
 };
 
 // Get user by ID

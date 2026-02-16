@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Param,
   Put,
+  Query,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -35,6 +36,8 @@ import { UserId } from 'src/modules/shared/infrastructure/decorators/user-id.dec
 import { Auth } from 'src/modules/shared/infrastructure/decorators/auth.decorator';
 import { UserIdProperty } from '../api/request-properties';
 import { DeleteUserByIdUseCase } from '../../application/use-cases/delete-user-by-id.use-case';
+import { FindUsersQueryDto } from '../dtos/find-users-query.dto';
+import { buildPaginationMeta } from 'src/modules/shared/infrastructure/dtos/paginated-response.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -55,9 +58,12 @@ export class UsersController {
     description: 'Retrieve a list of all users with their profiles',
   })
   @ApiResponse(GetUsersResponse)
-  async getAllUsers() {
-    const { users, count } = await this.findUsersUseCase.execute();
-    return { users: users.map((user) => new UserResponseDto(user)), count };
+  async getAllUsers(@Query() query: FindUsersQueryDto) {
+    const { users, total } = await this.findUsersUseCase.execute(query);
+    return {
+      data: users.map((user) => new UserResponseDto(user)),
+      meta: buildPaginationMeta(total, query.page, query.limit),
+    };
   }
 
   @Get(':userId')

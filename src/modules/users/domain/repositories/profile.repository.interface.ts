@@ -1,4 +1,5 @@
 import { Profile } from '../entities/profile.entity';
+import { SortDirection } from 'src/modules/shared/domain/enums/sort-direction.enum';
 
 export class CreateProfileDto {
   userId: string;
@@ -17,5 +18,12 @@ export interface IProfileRepository {
   updateById(userId: string, updateData: UpdateProfileDto): Promise<Profile>;
   findByUserId(userId: string): Promise<Profile | null>;
   findByUserIds(userIds: string[]): Promise<Profile[]>;
+  findWithCount(options: {
+    page: number;
+    limit: number;
+    sortBy?: string;
+    sortDir?: SortDirection;
+    search?: string;
+  }): Promise<{ profiles: Profile[]; count: number }>;
   deleteByUserId(userId: string): Promise<void>;
 }
