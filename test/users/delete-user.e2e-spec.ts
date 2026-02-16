@@ -33,11 +33,34 @@ describe('Users - Delete User (e2e)', () => {
       .set('Authorization', `Bearer ${user.accessToken}`)
       .expect(200);
 
-    // Verify deletion
+    // Verify deletion - token should now be invalid (401)
     await request(app.getHttpServer())
       .get(`/users/${user.userId}`)
       .set('Authorization', `Bearer ${user.accessToken}`)
-      .expect(404);
+      .expect(401);
+  });
+
+  it('DELETE /users/:userId - should invalidate all tokens after deletion', async () => {
+    const user = await UsersHelper.setupUser(app);
+    const { accessToken, refreshToken } = user;
+
+    // Delete the user
+    await request(app.getHttpServer())
+      .delete(`/users/${user.userId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    // Try to use access token - should fail with 401
+    await request(app.getHttpServer())
+      .get('/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(401);
+
+    // Try to refresh token - should fail with 401
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Authorization', `Bearer ${refreshToken}`)
+      .expect(401);
   });
 
   it('DELETE /users/:userId - should forbid deleting another user', async () => {

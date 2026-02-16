@@ -20,6 +20,10 @@ import {
   TOKEN_HASHER_SERVICE_NAME,
   Sha256TokenHasher,
 } from './infrastructure/services/sha256-token-hasher.service';
+import {
+  USER_VALIDATOR_SERVICE_NAME,
+  UserValidatorService,
+} from './infrastructure/services/user-validator.service';
 import { JwtAccessStrategy } from './infrastructure/strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
@@ -53,6 +57,10 @@ import { RegisterUseCase } from './application/use-cases/register.use-case';
     {
       provide: TOKEN_HASHER_SERVICE_NAME,
       useClass: Sha256TokenHasher,
+    },
+    {
+      provide: USER_VALIDATOR_SERVICE_NAME,
+      useClass: UserValidatorService,
     },
     JwtAccessStrategy,
     JwtRefreshStrategy,
