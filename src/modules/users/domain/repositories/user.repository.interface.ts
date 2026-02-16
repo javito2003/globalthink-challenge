@@ -1,5 +1,9 @@
 import { User } from '../entities/user.entity';
-import { CreateUserDto } from '../../infrastructure/persistence/user.repository-types';
+
+export interface CreateUserDto {
+  email: string;
+  password: string;
+}
 
 export interface IUserRepository {
   create(user: CreateUserDto): Promise<User>;

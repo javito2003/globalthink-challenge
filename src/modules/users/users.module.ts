@@ -8,7 +8,7 @@ import {
   Profile,
   ProfileSchema,
 } from './infrastructure/persistence/schemas/profile.schema';
-import { UserRepository } from './infrastructure/persistence/user.repository';
+import { UserRepository } from './infrastructure/persistence/repositories/user.repository';
 
 @Module({
   imports: [
