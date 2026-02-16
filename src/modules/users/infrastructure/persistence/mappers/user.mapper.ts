@@ -7,6 +7,7 @@ export class UserMapper {
       id: userDoc._id.toString(),
       email: userDoc.email,
       password: userDoc.password,
+      refreshToken: userDoc.refreshToken,
       createdAt: userDoc.createdAt,
       updatedAt: userDoc.updatedAt,
     };
@@ -16,6 +17,7 @@ export class UserMapper {
     return {
       email: user.email,
       password: user.password,
+      refreshToken: user.refreshToken,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

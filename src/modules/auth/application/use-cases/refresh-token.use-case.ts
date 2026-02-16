@@ -7,47 +7,46 @@ import type {
   ITokenService,
   ITokenPair,
 } from '../../domain/services/token.service.interface';
-import { InvalidCredentialsException } from '../../domain/exceptions/invalid-credentials.exception';
+import { InvalidRefreshTokenException } from '../../domain/exceptions/invalid-refresh-token.exception';
 
 @Injectable()
-export class LoginUseCase {
+export class RefreshTokenUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
+    @Inject() private readonly userRepository: UserRepository,
     @Inject(BCRYPT_SERVICE_NAME)
     private readonly passwordHasherService: IPasswordHasherService,
     @Inject(TOKEN_SERVICE_NAME)
     private readonly tokenService: ITokenService,
   ) {}
 
-  async execute(email: string, password: string): Promise<ITokenPair> {
-    const existentUser = await this.userRepository.findByEmail(email);
-    if (!existentUser) {
-      throw new InvalidCredentialsException();
+  async execute(userId: string, refreshToken: string): Promise<ITokenPair> {
+    const user = await this.userRepository.findById(userId);
+
+    if (!user || !user.refreshToken) {
+      throw new InvalidRefreshTokenException();
     }
 
-    const isPasswordValid = await this.passwordHasherService.compare(
-      password,
-      existentUser.password,
+    // Compare the provided refresh token with the stored hashed one
+    const isRefreshTokenValid = await this.passwordHasherService.compare(
+      refreshToken,
+      user.refreshToken,
     );
 
-    if (!isPasswordValid) {
-      throw new InvalidCredentialsException();
+    if (!isRefreshTokenValid) {
+      throw new InvalidRefreshTokenException();
     }
 
-    // Generate token pair
+    // Generate new token pair
     const tokens = await this.tokenService.generateTokenPair({
-      sub: existentUser.id,
-      email: existentUser.email,
+      sub: user.id,
+      email: user.email,
     });
 
-    // Hash and save refresh token
+    // Hash and update the new refresh token
     const hashedRefreshToken = await this.passwordHasherService.hash(
       tokens.refreshToken,
     );
-    await this.userRepository.updateRefreshToken(
-      existentUser.id,
-      hashedRefreshToken,
-    );
+    await this.userRepository.updateRefreshToken(user.id, hashedRefreshToken);
 
     return tokens;
   }

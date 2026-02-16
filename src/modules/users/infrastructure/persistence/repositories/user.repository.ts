@@ -24,4 +24,13 @@ export class UserRepository implements IUserRepository {
     const user = await this.userModel.findOne({ email });
     return user ? UserMapper.toEntity(user) : null;
   }
+
+  async findById(id: string): Promise<UserEntity | null> {
+    const user = await this.userModel.findById(id);
+    return user ? UserMapper.toEntity(user) : null;
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { refreshToken });
+  }
 }
