@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { UserRepository } from 'src/modules/users/infrastructure/persistence/repositories/user.repository';
+import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
@@ -12,7 +13,8 @@ import { InvalidRefreshTokenException } from '../../domain/exceptions/invalid-re
 @Injectable()
 export class RefreshTokenUseCase {
   constructor(
-    @Inject() private readonly userRepository: UserRepository,
+    @Inject(USER_REPOSITORY_TOKEN)
+    private readonly userRepository: IUserRepository,
     @Inject(BCRYPT_SERVICE_NAME)
     private readonly passwordHasherService: IPasswordHasherService,
     @Inject(TOKEN_SERVICE_NAME)

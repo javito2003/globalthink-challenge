@@ -18,6 +18,7 @@ import {
 } from './infrastructure/services/jwt-token.service';
 import { JwtAccessStrategy } from './infrastructure/strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
+import { RegisterUseCase } from './application/use-cases/register.use-case';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.stra
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [CustomConfigService],
-      useFactory: async (configService: CustomConfigService) => ({
+      useFactory: (configService: CustomConfigService) => ({
         secret: configService.jwt.accessSecret,
         signOptions: {
           expiresIn: '15m',
@@ -50,6 +51,7 @@ import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.stra
     LoginUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
+    RegisterUseCase,
   ],
 })
 export class AuthModule {}

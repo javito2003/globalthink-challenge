@@ -2,20 +2,53 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './modules/shared/infrastructure/filters/domain-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new DomainExceptionFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('GlobalThink Challenge API')
-    .setDescription('The GlobalThink Challenge API description')
+    .setDescription(
+      'RESTful API for GlobalThink Challenge with authentication and user management',
+    )
     .setVersion('1.0')
-    .addTag('GlobalThink Challenge')
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('users', 'User management endpoints')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT access token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT-Refresh',
+        description: 'Enter JWT refresh token',
+        in: 'header',
+      },
+      'JWT-refresh',
+    )
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();

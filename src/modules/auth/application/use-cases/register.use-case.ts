@@ -1,12 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { UserRepository } from 'src/modules/users/infrastructure/persistence/repositories/user.repository';
 import { BCRYPT_SERVICE_NAME } from '../../infrastructure/services/bcrypt-hasher.service';
 import type { IPasswordHasherService } from '../../domain/services/password-hasher.service.interface';
 import { TOKEN_SERVICE_NAME } from '../../infrastructure/services/jwt-token.service';
 import type { ITokenService } from '../../domain/services/token.service.inteface';
-import type { IProfileRepository } from 'src/modules/users/domain/repositories/profile.repository.interface';
 import { ITokenPair } from '../../domain/services/token.service.interface';
 import { EmailAlreadyInUseException } from '../../domain/exceptions/email-already-in-use.exception';
+import {
+  PROFILE_REPOSITORY_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from 'src/modules/users/domain/repositories/repository.tokens';
+import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
+import type { IProfileRepository } from 'src/modules/users/domain/repositories/profile.repository.interface';
 
 export interface RegisterUseCaseInput {
   email: string;
@@ -19,7 +23,9 @@ export interface RegisterUseCaseInput {
 @Injectable()
 export class RegisterUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
+    @Inject(USER_REPOSITORY_TOKEN)
+    private readonly userRepository: IUserRepository,
+    @Inject(PROFILE_REPOSITORY_TOKEN)
     private readonly profileRepository: IProfileRepository,
     @Inject(BCRYPT_SERVICE_NAME)
     private readonly passwordHasherService: IPasswordHasherService,

@@ -10,6 +10,10 @@ import {
 } from './infrastructure/persistence/schemas/profile.schema';
 import { UserRepository } from './infrastructure/persistence/repositories/user.repository';
 import { ProfileRepository } from './infrastructure/persistence/repositories/profie.repository';
+import {
+  USER_REPOSITORY_TOKEN,
+  PROFILE_REPOSITORY_TOKEN,
+} from './domain/repositories/repository.tokens';
 
 @Module({
   imports: [
@@ -24,7 +28,16 @@ import { ProfileRepository } from './infrastructure/persistence/repositories/pro
       },
     ]),
   ],
-  providers: [UserRepository, ProfileRepository],
-  exports: [UserRepository, ProfileRepository],
+  providers: [
+    {
+      provide: USER_REPOSITORY_TOKEN,
+      useClass: UserRepository,
+    },
+    {
+      provide: PROFILE_REPOSITORY_TOKEN,
+      useClass: ProfileRepository,
+    },
+  ],
+  exports: [USER_REPOSITORY_TOKEN, PROFILE_REPOSITORY_TOKEN],
 })
 export class UsersModule {}

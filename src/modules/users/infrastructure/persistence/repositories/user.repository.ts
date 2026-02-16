@@ -30,7 +30,10 @@ export class UserRepository implements IUserRepository {
     return user ? UserMapper.toEntity(user) : null;
   }
 
-  async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string | null,
+  ): Promise<void> {
     await this.userModel.findByIdAndUpdate(userId, { refreshToken });
   }
 }
