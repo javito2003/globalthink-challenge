@@ -16,12 +16,12 @@ import {
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
-import { JwtAuthGuard } from '../../infrastructure/guards/jwt-auth.guard';
 import { JwtRefreshGuard } from '../../infrastructure/guards/jwt-refresh.guard';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case';
 import { UserId } from 'src/modules/shared/infrastructure/decorators/user-id.decorator';
+import { Auth } from 'src/modules/shared/infrastructure/decorators/auth.decorator';
 import {
   LoginSuccessResponse,
   LoginInvalidCredentialsResponse,
@@ -30,7 +30,6 @@ import {
   RefreshSuccessResponse,
   RefreshInvalidTokenResponse,
   LogoutSuccessResponse,
-  LogoutUnauthorizedResponse,
   RegisterSuccessResponse,
   RegisterValidationErrorResponse,
   RegisterEmailInUseResponse,
@@ -82,14 +81,12 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @Auth()
   @ApiOperation({
     summary: 'User logout',
     description: 'Invalidate refresh token and logout user',
   })
   @ApiResponse(LogoutSuccessResponse)
-  @ApiResponse(LogoutUnauthorizedResponse)
   async logout(@UserId() userId: string) {
     await this.logoutUseCase.execute(userId);
     return { message: 'Logged out successfully' };

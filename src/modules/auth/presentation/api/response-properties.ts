@@ -70,14 +70,6 @@ export const LogoutSuccessResponse: ApiResponseOptions = {
   type: LogoutResponseDto,
 };
 
-export const LogoutUnauthorizedResponse: ApiResponseOptions = {
-  status: HttpStatus.UNAUTHORIZED,
-  description: 'Unauthorized - invalid or missing token',
-  schema: {
-    example: buildErrorDomainResponse(AUTH_EXCEPTIONS.INVALID_ACCESS_TOKEN),
-  },
-};
-
 // ==================== Register Responses ====================
 export const RegisterSuccessResponse: ApiResponseOptions = {
   status: HttpStatus.CREATED,

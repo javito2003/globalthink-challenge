@@ -8,18 +8,15 @@ import {
   HttpStatus,
   Param,
   Put,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiBearerAuth,
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/modules/auth/infrastructure/guards/jwt-auth.guard';
 import { FindUserByIdUseCase } from '../../application/use-cases/find-user-by-id.use-case';
 import { UpdateUserProfileByIdUseCase } from '../../application/use-cases/update-user-profile-by-id.use-case';
 import { UserIdDto } from '../dtos/data/user-id.dto';
@@ -31,18 +28,14 @@ import {
 } from '../api/response-properties';
 import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
 import { UserId } from 'src/modules/shared/infrastructure/decorators/user-id.decorator';
+import { Auth } from 'src/modules/shared/infrastructure/decorators/auth.decorator';
 import { UserIdProperty } from '../api/request-properties';
 import { DeleteUserByIdUseCase } from '../../application/use-cases/delete-user-by-id.use-case';
 
 @ApiTags('users')
-@ApiBearerAuth('JWT-auth')
 @Controller('users')
-@UseGuards(JwtAuthGuard)
+@Auth()
 @UseInterceptors(ClassSerializerInterceptor)
-@ApiResponse({
-  status: HttpStatus.UNAUTHORIZED,
-  description: 'Unauthorized - invalid or missing token',
-})
 export class UsersController {
   constructor(
     private readonly findUserByIdUseCase: FindUserByIdUseCase,
