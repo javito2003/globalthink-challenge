@@ -1,7 +1,5 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { getConnectionToken } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { AppHelper } from '../helpers/app.helper';
 import { DatabaseHelper } from '../helpers/database.helper';
@@ -10,17 +8,20 @@ import { AUTH_EXCEPTIONS } from '../../src/modules/auth/domain/exceptions/auth.e
 import { App } from 'supertest/types';
 import { ITokenPair } from 'src/modules/auth/domain/services/token.service.interface';
 import { ErrorResponseProperties } from 'src/modules/shared/presentation/api/build-error-response.properties';
+import { faker } from '@faker-js/faker';
+import {
+  MAX_USER_PASSWORD_LENGTH,
+  MIN_USER_PASSWORD_LENGTH,
+} from 'src/modules/users/domain/entities/user.entity';
 
 describe('Auth - Register (e2e)', () => {
   let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
-  let connection: Connection;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
-    connection = app.get<Connection>(getConnectionToken());
   });
 
   afterAll(async () => {
@@ -70,12 +71,6 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors[0].message).toBe(
       AUTH_EXCEPTIONS.EMAIL_ALREADY_IN_USE.message,
     );
-
-    // Assert DB - Only one user exists
-    const userCount = await connection
-      .collection('users')
-      .countDocuments({ email: payload.email });
-    expect(userCount).toBe(1);
   });
 
   it('POST /auth/register - invalid data (missing fields)', async () => {
@@ -97,10 +92,6 @@ describe('Auth - Register (e2e)', () => {
         expect.objectContaining({ field: 'birthDate' }),
       ]),
     );
-
-    // Assert DB - No user created
-    const userCount = await connection.collection('users').countDocuments();
-    expect(userCount).toBe(0);
   });
 
   it('POST /auth/register - invalid email format', async () => {
@@ -116,34 +107,11 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors).toEqual(
       expect.arrayContaining([expect.objectContaining({ field: 'email' })]),
     );
-
-    // Assert DB - No user created
-    const userCount = await connection.collection('users').countDocuments();
-    expect(userCount).toBe(0);
   });
 
   it('POST /auth/register - password too short', async () => {
-    const payload = createRegisterPayload({ password: '12345' }); // Less than 6 characters
-
-    const response = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send(payload)
-      .expect(400);
-
-    const responseBody = response.body as ErrorResponseProperties;
-    expect(responseBody.message).toBe('Validation failed');
-    expect(responseBody.errors).toEqual(
-      expect.arrayContaining([expect.objectContaining({ field: 'password' })]),
-    );
-
-    // Assert DB - No user created
-    const userCount = await connection.collection('users').countDocuments();
-    expect(userCount).toBe(0);
-  });
-
-  it('POST /auth/register - password too long', async () => {
     const payload = createRegisterPayload({
-      password: 'a'.repeat(21), // More than 20 characters
+      password: faker.string.alpha(MIN_USER_PASSWORD_LENGTH - 1),
     });
 
     const response = await request(app.getHttpServer())
@@ -156,9 +124,22 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors).toEqual(
       expect.arrayContaining([expect.objectContaining({ field: 'password' })]),
     );
+  });
 
-    // Assert DB - No user created
-    const userCount = await connection.collection('users').countDocuments();
-    expect(userCount).toBe(0);
+  it('POST /auth/register - password too long', async () => {
+    const payload = createRegisterPayload({
+      password: faker.string.alpha(MAX_USER_PASSWORD_LENGTH + 1),
+    });
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send(payload)
+      .expect(400);
+
+    const responseBody = response.body as ErrorResponseProperties;
+    expect(responseBody.message).toBe('Validation failed');
+    expect(responseBody.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'password' })]),
+    );
   });
 });

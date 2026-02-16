@@ -1,12 +1,15 @@
 import { faker } from '@faker-js/faker';
-import type { User } from 'src/modules/users/domain/entities/user.entity';
+import {
+  MIN_USER_PASSWORD_LENGTH,
+  type User,
+} from 'src/modules/users/domain/entities/user.entity';
 import type { Profile } from 'src/modules/users/domain/entities/profile.entity';
 import type { ITokenPair } from 'src/modules/auth/domain/services/token.service.interface';
 
 export const createMockUser = (overrides?: Partial<User>): User => ({
   id: faker.string.uuid(),
   email: faker.internet.email(),
-  password: faker.string.alphanumeric(10),
+  password: faker.string.alphanumeric(MIN_USER_PASSWORD_LENGTH),
   refreshToken: null,
   createdAt: new Date(),
   updatedAt: new Date(),

@@ -6,6 +6,10 @@ import {
 } from 'src/modules/shared/presentation/api/build-error-response.properties';
 import { TokenPairDto, LogoutResponseDto } from '../dto/auth-response.dto';
 import { AUTH_EXCEPTIONS } from '../../domain/exceptions/auth.exceptions';
+import {
+  MAX_USER_PASSWORD_LENGTH,
+  MIN_USER_PASSWORD_LENGTH,
+} from 'src/modules/users/domain/entities/user.entity';
 
 // ==================== Login Responses ====================
 export const LoginSuccessResponse: ApiResponseOptions = {
@@ -41,7 +45,7 @@ export const LoginInvalidPasswordResponse: ApiResponseOptions = {
   schema: {
     example: buildErrorValidationResponseProperties([
       {
-        message: 'password must be between 6 and 20 characters',
+        message: `password must be between ${MIN_USER_PASSWORD_LENGTH} and ${MAX_USER_PASSWORD_LENGTH} characters`,
         field: 'password',
       },
     ]),
