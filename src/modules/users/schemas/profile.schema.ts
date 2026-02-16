@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as mongooseSchema } from 'mongoose';
 
 export type ProfileDocument = HydratedDocument<Profile>;
 
@@ -7,7 +7,12 @@ export type ProfileDocument = HydratedDocument<Profile>;
   timestamps: true,
 })
 export class Profile {
-  @Prop({ required: true, unique: true })
+  @Prop({
+    required: true,
+    unique: true,
+    type: mongooseSchema.Types.ObjectId,
+    ref: 'User',
+  })
   userId: string;
 
   @Prop({ required: true })
