@@ -8,15 +8,21 @@ import { AUTH_EXCEPTIONS } from '../../src/modules/auth/domain/exceptions/auth.e
 import { App } from 'supertest/types';
 import { ITokenPair } from 'src/modules/auth/domain/services/token.service.interface';
 import { ErrorResponseProperties } from 'src/modules/shared/presentation/api/build-error-response.properties';
+import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
+import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
 
 describe('Auth - Refresh (e2e)', () => {
   let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
+  let userRepository: IUserRepository;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
+
+    // Get repository from DI container
+    userRepository = app.get<IUserRepository>(USER_REPOSITORY_TOKEN);
   });
 
   afterAll(async () => {
@@ -45,6 +51,12 @@ describe('Auth - Refresh (e2e)', () => {
 
     const { refreshToken: oldRefreshToken } = loginResponse.body as ITokenPair;
 
+    // Get user before refresh to check refreshToken state
+    const userBefore = await userRepository.findByEmail(registerPayload.email);
+    const oldHashedRefreshToken = userBefore?.refreshToken;
+    expect(oldHashedRefreshToken).toBeDefined();
+    expect(oldHashedRefreshToken).not.toBeNull();
+
     // Use refresh token to get new tokens
     const refreshResponse = await request(app.getHttpServer())
       .post('/auth/refresh')
@@ -57,6 +69,15 @@ describe('Auth - Refresh (e2e)', () => {
     expect(refreshResponseBody).toHaveProperty('refreshToken');
     expect(typeof refreshResponseBody.accessToken).toBe('string');
     expect(typeof refreshResponseBody.refreshToken).toBe('string');
+
+    // Assert DB - User's refreshToken is updated to new hashed token
+    const userAfter = await userRepository.findByEmail(registerPayload.email);
+    expect(userAfter?.refreshToken).toBeDefined();
+    expect(userAfter?.refreshToken).not.toBeNull();
+    expect(userAfter?.refreshToken).not.toBe(oldHashedRefreshToken); // Should be updated
+    expect(userAfter?.refreshToken).not.toBe(
+      refreshResponseBody.refreshToken,
+    ); // Should be hashed
   });
 
   it('POST /auth/refresh - invalid token', async () => {

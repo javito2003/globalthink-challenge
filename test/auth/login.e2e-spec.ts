@@ -10,15 +10,21 @@ import {
 import { AUTH_EXCEPTIONS } from '../../src/modules/auth/domain/exceptions/auth.exceptions';
 import { App } from 'supertest/types';
 import { ErrorResponseProperties } from 'src/modules/shared/presentation/api/build-error-response.properties';
+import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
+import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
 
 describe('Auth - Login (e2e)', () => {
   let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
+  let userRepository: IUserRepository;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
+
+    // Get repository from DI container
+    userRepository = app.get<IUserRepository>(USER_REPOSITORY_TOKEN);
   });
 
   afterAll(async () => {
@@ -36,6 +42,10 @@ describe('Auth - Login (e2e)', () => {
       .post('/auth/register')
       .send(registerPayload)
       .expect(201);
+
+    // Get user before login to check refreshToken state
+    const userBefore = await userRepository.findByEmail(registerPayload.email);
+    expect(userBefore?.refreshToken).toBeNull();
 
     // Login with registered credentials
     const loginPayload = createLoginPayload({
@@ -57,6 +67,12 @@ describe('Auth - Login (e2e)', () => {
     expect(responseBody).toHaveProperty('refreshToken');
     expect(typeof responseBody.accessToken).toBe('string');
     expect(typeof responseBody.refreshToken).toBe('string');
+
+    // Assert DB - User's refreshToken is updated (hashed)
+    const userAfter = await userRepository.findByEmail(registerPayload.email);
+    expect(userAfter?.refreshToken).toBeDefined();
+    expect(userAfter?.refreshToken).not.toBeNull();
+    expect(userAfter?.refreshToken).not.toBe(responseBody.refreshToken); // Should be hashed
   });
 
   it('POST /auth/login - non-existent email', async () => {
@@ -104,6 +120,10 @@ describe('Auth - Login (e2e)', () => {
     expect(responseBody.errors[0].message).toBe(
       AUTH_EXCEPTIONS.INVALID_CREDENTIALS.message,
     );
+
+    // Assert DB - refreshToken NOT updated (should still be null)
+    const user = await userRepository.findByEmail(registerPayload.email);
+    expect(user?.refreshToken).toBeNull();
   });
 
   it('POST /auth/login - invalid email format', async () => {

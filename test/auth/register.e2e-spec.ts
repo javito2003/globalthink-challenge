@@ -13,15 +13,27 @@ import {
   MAX_USER_PASSWORD_LENGTH,
   MIN_USER_PASSWORD_LENGTH,
 } from 'src/modules/users/domain/entities/user.entity';
+import {
+  USER_REPOSITORY_TOKEN,
+  PROFILE_REPOSITORY_TOKEN,
+} from 'src/modules/users/domain/repositories/repository.tokens';
+import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
+import type { IProfileRepository } from 'src/modules/users/domain/repositories/profile.repository.interface';
 
 describe('Auth - Register (e2e)', () => {
   let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
+  let userRepository: IUserRepository;
+  let profileRepository: IProfileRepository;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
+
+    // Get repositories from DI container
+    userRepository = app.get<IUserRepository>(USER_REPOSITORY_TOKEN);
+    profileRepository = app.get<IProfileRepository>(PROFILE_REPOSITORY_TOKEN);
   });
 
   afterAll(async () => {
@@ -46,6 +58,21 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody).toHaveProperty('refreshToken');
     expect(typeof responseBody.accessToken).toBe('string');
     expect(typeof responseBody.refreshToken).toBe('string');
+
+    // Assert DB using repositories
+    const user = await userRepository.findByEmail(payload.email);
+    expect(user).toBeDefined();
+    expect(user!.email).toBe(payload.email);
+    expect(user!.password).not.toBe(payload.password); // Password should be hashed
+    expect(user!.refreshToken).toBeNull(); // refreshToken not stored on register
+
+    const profile = await profileRepository.findByUserId(user!.id);
+    expect(profile).toBeDefined();
+    expect(profile!.firstName).toBe(payload.firstName);
+    expect(profile!.lastName).toBe(payload.lastName);
+    expect(new Date(profile!.birthDate).toISOString().split('T')[0]).toBe(
+      payload.birthDate,
+    );
   });
 
   it('POST /auth/register - duplicate email', async () => {
@@ -71,6 +98,10 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors[0].message).toBe(
       AUTH_EXCEPTIONS.EMAIL_ALREADY_IN_USE.message,
     );
+
+    // Assert DB - Only one user exists
+    const user = await userRepository.findByEmail(payload.email);
+    expect(user).toBeDefined();
   });
 
   it('POST /auth/register - invalid data (missing fields)', async () => {
@@ -92,6 +123,10 @@ describe('Auth - Register (e2e)', () => {
         expect.objectContaining({ field: 'birthDate' }),
       ]),
     );
+
+    // Assert DB - No user created
+    const user = await userRepository.findByEmail('test@example.com');
+    expect(user).toBeNull();
   });
 
   it('POST /auth/register - invalid email format', async () => {
@@ -107,6 +142,10 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors).toEqual(
       expect.arrayContaining([expect.objectContaining({ field: 'email' })]),
     );
+
+    // Assert DB - No user created
+    const user = await userRepository.findByEmail(payload.email);
+    expect(user).toBeNull();
   });
 
   it('POST /auth/register - password too short', async () => {
@@ -124,6 +163,10 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors).toEqual(
       expect.arrayContaining([expect.objectContaining({ field: 'password' })]),
     );
+
+    // Assert DB - No user created
+    const user = await userRepository.findByEmail(payload.email);
+    expect(user).toBeNull();
   });
 
   it('POST /auth/register - password too long', async () => {
@@ -141,5 +184,9 @@ describe('Auth - Register (e2e)', () => {
     expect(responseBody.errors).toEqual(
       expect.arrayContaining([expect.objectContaining({ field: 'password' })]),
     );
+
+    // Assert DB - No user created
+    const user = await userRepository.findByEmail(payload.email);
+    expect(user).toBeNull();
   });
 });

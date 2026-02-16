@@ -8,15 +8,21 @@ import { AUTH_EXCEPTIONS } from '../../src/modules/auth/domain/exceptions/auth.e
 import { App } from 'supertest/types';
 import { ITokenPair } from 'src/modules/auth/domain/services/token.service.interface';
 import { ErrorResponseProperties } from 'src/modules/shared/presentation/api/build-error-response.properties';
+import { USER_REPOSITORY_TOKEN } from 'src/modules/users/domain/repositories/repository.tokens';
+import type { IUserRepository } from 'src/modules/users/domain/repositories/user.repository.interface';
 
 describe('Auth - Logout (e2e)', () => {
   let app: INestApplication<App>;
   let mongoServer: MongoMemoryServer;
+  let userRepository: IUserRepository;
 
   beforeAll(async () => {
     const testApp = await AppHelper.createTestApp();
     app = testApp.app;
     mongoServer = testApp.mongoServer;
+
+    // Get repository from DI container
+    userRepository = app.get<IUserRepository>(USER_REPOSITORY_TOKEN);
   });
 
   afterAll(async () => {
@@ -47,6 +53,11 @@ describe('Auth - Logout (e2e)', () => {
 
     const { accessToken } = responseBody;
 
+    // Verify user has refreshToken before logout
+    const userBefore = await userRepository.findByEmail(registerPayload.email);
+    expect(userBefore?.refreshToken).not.toBeNull();
+    expect(userBefore?.refreshToken).toBeDefined();
+
     // Logout
     const logoutResponse = await request(app.getHttpServer())
       .post('/auth/logout')
@@ -54,6 +65,11 @@ describe('Auth - Logout (e2e)', () => {
       .expect(200);
 
     expect(logoutResponse.body).toHaveProperty('message');
+    expect(logoutResponse.body.message).toBe('Logged out successfully');
+
+    // Assert DB - User's refreshToken is set to null
+    const userAfter = await userRepository.findByEmail(registerPayload.email);
+    expect(userAfter?.refreshToken).toBeNull();
   });
 
   it('POST /auth/logout - missing Bearer token', async () => {
@@ -112,6 +128,10 @@ describe('Auth - Logout (e2e)', () => {
     expect(responseBody.errors[0].code).toBe(
       AUTH_EXCEPTIONS.INVALID_ACCESS_TOKEN.code,
     );
+
+    // Assert DB - refreshToken should still exist (logout didn't happen)
+    const user = await userRepository.findByEmail(registerPayload.email);
+    expect(user?.refreshToken).not.toBeNull();
   });
 
   it('POST /auth/logout - already logged out', async () => {
@@ -144,7 +164,10 @@ describe('Auth - Logout (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    const responseBody = response.body as ErrorResponseProperties;
-    expect(responseBody.message).toBe('Logged out successfully');
+    expect(response.body.message).toBe('Logged out successfully');
+
+    // Assert DB - refreshToken should still be null
+    const user = await userRepository.findByEmail(registerPayload.email);
+    expect(user?.refreshToken).toBeNull();
   });
 });
