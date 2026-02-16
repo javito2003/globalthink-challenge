@@ -37,7 +37,10 @@ describe('UpdateUserProfileByIdUseCase', () => {
     profileRepository.findByUserId.mockResolvedValue(mockProfile);
     profileRepository.updateById.mockResolvedValue(updatedProfile);
 
-    const input = { firstName: updatedProfile.firstName, bio: updatedProfile.bio };
+    const input = {
+      firstName: updatedProfile.firstName,
+      bio: updatedProfile.bio,
+    };
     const result = await useCase.execute(
       mockProfile.userId,
       mockProfile.userId,
@@ -57,8 +60,10 @@ describe('UpdateUserProfileByIdUseCase', () => {
   it('should throw UserNotFound when profile does not exist', async () => {
     profileRepository.findByUserId.mockResolvedValue(null);
 
+    const userId = faker.string.uuid();
+
     await expect(
-      useCase.execute('unknown-id', 'unknown-id', {
+      useCase.execute(userId, userId, {
         firstName: faker.person.firstName(),
       }),
     ).rejects.toThrow(UserNotFound);
@@ -70,7 +75,7 @@ describe('UpdateUserProfileByIdUseCase', () => {
     profileRepository.findByUserId.mockResolvedValue(mockProfile);
 
     await expect(
-      useCase.execute(mockProfile.userId, 'other-user', {
+      useCase.execute(mockProfile.userId, faker.string.uuid(), {
         firstName: faker.person.firstName(),
       }),
     ).rejects.toThrow(UserNotAllowedToEdit);

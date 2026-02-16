@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { faker } from '@faker-js/faker';
 import { FindUserByIdUseCase } from './find-user-by-id.use-case';
 import {
   USER_REPOSITORY_TOKEN,
@@ -53,7 +54,9 @@ describe('FindUserByIdUseCase', () => {
   it('should throw UserNotFound when user does not exist', async () => {
     userRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('unknown-id')).rejects.toThrow(UserNotFound);
+    await expect(useCase.execute(faker.string.uuid())).rejects.toThrow(
+      UserNotFound,
+    );
 
     expect(profileRepository.findByUserId).not.toHaveBeenCalled();
   });

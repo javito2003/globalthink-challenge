@@ -21,9 +21,7 @@ describe('FindUsersUseCase', () => {
   let profileRepository: jest.Mocked<IProfileRepository>;
 
   const mockUsers = [createMockUser(), createMockUser()];
-  const mockProfiles = [
-    createMockProfile({ userId: mockUsers[0].id }),
-  ];
+  const mockProfiles = [createMockProfile({ userId: mockUsers[0].id })];
 
   beforeEach(async () => {
     userRepository = createMockUserRepository();

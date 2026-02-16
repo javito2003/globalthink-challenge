@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { faker } from '@faker-js/faker';
 import { DeleteUserByIdUseCase } from './delete-user-by-id.use-case';
 import {
   USER_REPOSITORY_TOKEN,
@@ -48,10 +49,9 @@ describe('DeleteUserByIdUseCase', () => {
 
   it('should throw UserNotFound when user does not exist', async () => {
     userRepository.findById.mockResolvedValue(null);
+    const userId = faker.string.uuid();
 
-    await expect(
-      useCase.execute('unknown-id', 'unknown-id'),
-    ).rejects.toThrow(UserNotFound);
+    await expect(useCase.execute(userId, userId)).rejects.toThrow(UserNotFound);
 
     expect(profileRepository.deleteByUserId).not.toHaveBeenCalled();
     expect(userRepository.deleteById).not.toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('DeleteUserByIdUseCase', () => {
     userRepository.findById.mockResolvedValue(mockUser);
 
     await expect(
-      useCase.execute(mockUser.id, 'other-user'),
+      useCase.execute(mockUser.id, faker.string.uuid()),
     ).rejects.toThrow(UserNotAllowedToDelete);
 
     expect(profileRepository.deleteByUserId).not.toHaveBeenCalled();
