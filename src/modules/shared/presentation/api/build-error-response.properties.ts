@@ -1,14 +1,19 @@
-interface ErrorResponseProperties {
+export interface ErrorResponseProperties {
+  message: string;
+  errors: ErrorResponse[];
+}
+
+interface ErrorResponse {
   message: string;
   code?: string;
   field?: string;
 }
 
-type ErrorValidation = Pick<ErrorResponseProperties, 'message' | 'field'>;
+type ErrorValidation = Pick<ErrorResponse, 'message' | 'field'>;
 
 const buildErrorResponseProperties = (
   errorMessage: string,
-  errors: ErrorResponseProperties[],
+  errors: ErrorResponse[],
 ) => {
   return {
     message: errorMessage,
@@ -33,6 +38,5 @@ export const buildErrorValidationResponseProperties = (
   );
 };
 
-export const buildErrorDomainResponse = (
-  errorDomain: ErrorResponseProperties,
-) => buildErrorResponseProperties(errorDomain.message, [errorDomain]);
+export const buildErrorDomainResponse = (errorDomain: ErrorResponse) =>
+  buildErrorResponseProperties(errorDomain.message, [errorDomain]);
