@@ -9,4 +9,9 @@ export const USER_EXCEPTIONS = {
     statusCode: 403,
     code: 'USER_NOT_ALLOWED_TO_DELETE',
   },
+  USER_NOT_ALLOWED_TO_EDIT_PROFILE: {
+    message: 'User is not allowed to edit this profile',
+    statusCode: 403,
+    code: 'USER_NOT_ALLOWED_TO_EDIT_PROFILE',
+  },
 };

@@ -23,6 +23,9 @@ import { UserIdDto } from '../dtos/data/user-id.dto';
 import { FindUsersUseCase } from '../../application/use-cases/find-users.use-case';
 import { UserResponseDto } from '../dtos/user-response.dto';
 import {
+  EditUserByIdResponse,
+  GetUserByIdResponse,
+  GetUsersResponse,
   UserNotAllowedToDeleteResponse,
   UserNotAllowedToEditResponse,
   UserNotFoundResponse,
@@ -51,11 +54,7 @@ export class UsersController {
     summary: 'Get all users',
     description: 'Retrieve a list of all users with their profiles',
   })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'List of users retrieved successfully',
-    type: [UserResponseDto],
-  })
+  @ApiResponse(GetUsersResponse)
   async getAllUsers() {
     const { users, count } = await this.findUsersUseCase.execute();
     return { users: users.map((user) => new UserResponseDto(user)), count };
@@ -68,11 +67,7 @@ export class UsersController {
     description: 'Retrieve a specific user by their ID',
   })
   @ApiParam(UserIdProperty)
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'User found successfully',
-    type: UserResponseDto,
-  })
+  @ApiResponse(GetUserByIdResponse)
   @ApiResponse(UserNotFoundResponse)
   async getUserById(@Param() param: UserIdDto) {
     const userFound = await this.findUserByIdUseCase.execute(param.userId);
@@ -88,11 +83,7 @@ export class UsersController {
   })
   @ApiParam(UserIdProperty)
   @ApiBody({ type: UpdateUserProfileDto })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'User updated successfully',
-    type: UserResponseDto,
-  })
+  @ApiResponse(EditUserByIdResponse)
   @ApiResponse(UserNotFoundResponse)
   @ApiResponse(UserNotAllowedToEditResponse)
   updateUser(
