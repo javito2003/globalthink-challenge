@@ -269,6 +269,8 @@ Once the application is running, access the interactive API documentation at:
 I did it that way because the challenge required it, but I disagree. I think DELETE /users/:userId should be /users/me because a user can only delete themselves. The same applies to PUT /users/:userid.
 That way is more semantical.
 
+The search, is not using any index (regex doesn't use index). The best approach here, should be use MongoDB Atlas
+
 ## 🐳 Docker
 
 Run the entire application stack (MongoDB + Backend) using Docker Compose:
